@@ -1,0 +1,8 @@
+%{
+  "crux_cache": {:hex, :crux_cache, "0.2.0", "85ff902d82cfb20e92561808914f6e9cc81ba7e629189636297ed53f889765c8", [:mix], [{:crux_structs, "~> 0.2.0", [hex: :crux_structs, repo: "hexpm", optional: false]}], "hexpm"},
+  "crux_gateway": {:hex, :crux_gateway, "0.2.1", "898b25d435335cbe2e4db6416e55d7545bb227fb08b4f1743453ed7937796bdf", [:mix], [{:gen_stage, "~> 0.13.1", [hex: :gen_stage, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}, {:websockex, "~> 0.4.1", [hex: :websockex, repo: "hexpm", optional: false]}], "hexpm"},
+  "crux_structs": {:hex, :crux_structs, "0.2.0", "9fb5760b8ed0b00f6ff09d4de655bd4bd333dccbaaace36d45717d694df00914", [:mix], [], "hexpm"},
+  "gen_stage": {:hex, :gen_stage, "0.13.1", "edff5bca9cab22c5d03a834062515e6a1aeeb7665fb44eddae086252e39c4378", [:mix], [], "hexpm"},
+  "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], [], "hexpm"},
+  "websockex": {:hex, :websockex, "0.4.2", "9a3b7dc25655517ecd3f8ff7109a77fce94956096b942836cdcfbc7c86603ecc", [:mix], [], "hexpm"},
+}
