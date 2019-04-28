@@ -2,20 +2,21 @@
 
 **TODO: Add description**
 
+## Useful links
+
+ - ~~[Documentation](https://hexdocs.pm/crux_extensions/0.1.0/)~~ Once released
+ - [Github](https://github.com/SpaceEEC/crux_extensions/)
+ - ~~[Changelog](https://github.com/SpaceEEC/crux_extensions/releases/tag/0.1.0/)~~ Once released
+ - [Umbrella Development Documentation](https://crux.randomly.space/Crux.Extensions.html)
+
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `crux_extensions` to your list of dependencies in `mix.exs`:
+The library can be installed by adding `crux_extensions` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:crux_extensions, "~> 0.1.0"}
+    {:crux_extensions, git: "https://github.com/spaceeec/crux_extensions"}
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/crux_extensions](https://hexdocs.pm/crux_extensions).
-

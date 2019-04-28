@@ -1,55 +1,86 @@
 defmodule Crux.Extensions.Command.Consumer do
+  @moduledoc false
+
   alias Crux.Extensions.Command
 
-  # command_mod = module()
-  # command_arg = list()
+  @type command_info :: {Command.command_mod(), Command.command_opts()}
+  @type command_infos :: [command_info()]
 
-  # command_info = {command_mod, command_arg}
-  # command_infos = [command_info]
-
-  def start_link(command_infos, prefix, event) do
-    Task.start_link(__MODULE__, :handle_event, [command_infos, prefix, event])
+  @doc """
+    Starts a consumer task handling a CREATE_MESSAGE event.
+  """
+  @spec start_link(Command.options(), Crux.Base.Processor.event()) :: {:ok, pid()} | :ignore
+  def start_link(opts, {:MESSAGE_CREATE, _, _} = event) do
+    Task.start_link(__MODULE__, :handle_event, [opts, event])
   end
 
-  def child_spec({command_infos, prefix}) do
+  # Not a MESSAGE_CREATE event, therefore not a command, therefore ignore it
+  def start_link(_, _), do: :ignore
+
+  def child_spec(opts) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [command_infos, prefix]},
+      start: {__MODULE__, :start_link, [opts]},
       restart: :transient
     }
   end
 
-  ### Prefix
+  @doc """
+    Handles incoming CREATE_MESSAGE events, executing possible commands.
+  """
+  def handle_event(opts, {_, %{content: content} = message, shard_id}) do
+    case handle_prefix(opts.prefix, content) do
+      {:ok, content} ->
+        for {command_mod, command} <- match_commands(opts, content, message, shard_id) do
+          command = run_command(command_mod, command)
 
-  def handle_event(command_infos, nil, {:MESSAGE_CREATE, %{content: content}, _shard_id} = event) do
-    handle_possible_command(command_infos, content, event)
-  end
+          if command.response && command.response_channel do
+            command.rest.create_message!(
+              command.response_channel,
+              command.response
+            )
+          end
+        end
 
-  def handle_event(
-        command_infos,
-        prefix,
-        {:MESSAGE_CREATE, %{content: content}, _shard_id} = event
-      ) do
-    content_down = String.downcase(content)
-
-    if String.starts_with?(content_down, prefix) do
-      rest = String.slice(content, String.length(prefix)..-1)
-
-      handle_possible_command(command_infos, rest, event)
+      _ ->
+        nil
     end
   end
-
-  def handle_event(_command_infos, _prefix, _event), do: nil
 
   ### Command (matching)
 
-  def handle_possible_command(command_infos, content, {_, message, shard_id}) do
-    for {command_mod, command} <- match_commands(command_infos, content, message, shard_id) do
-      run_command(command_mod, command)
+  @doc """
+    Removes the prefix, if not nil, from content and returns an `{:ok, content}` tuple.
+    Returns `:error` if prefix did not match.
+  """
+  @spec handle_prefix(
+          prefix :: String.t() | nil,
+          content :: String.t()
+        ) :: {:ok, String.t()} | :error
+  def handle_prefix(nil, content), do: {:ok, content}
+
+  def handle_prefix(prefix, content) do
+    content_down = String.downcase(content)
+
+    if String.starts_with?(content_down, prefix) do
+      content = String.slice(content, String.length(prefix)..-1)
+
+      {:ok, content}
+    else
+      :error
     end
   end
 
-  def match_commands(command_infos, content, message, shard_id) do
+  @doc """
+    Gets all commands matching the given content.
+  """
+  @spec match_commands(
+          opts :: Command.options(),
+          content :: String.t(),
+          message :: Crux.Structs.Message.t(),
+          shard_id :: non_neg_integer()
+        ) :: [{Command.command_info(), Command.t()}]
+  def match_commands(%{command_infos: command_infos, rest: rest}, content, message, shard_id) do
     [command | args] = String.split(content, ~r{ +})
 
     command = String.downcase(command)
@@ -61,14 +92,20 @@ defmodule Crux.Extensions.Command.Consumer do
          trigger: command,
          args: args,
          message: message,
-         shard_id: shard_id
+         shard_id: shard_id,
+         rest: rest,
+         response_channel: message.channel_id
        }}
     end
   end
 
   ### Command (running)
 
-  def run_command(_command_info, %Command{halted: true} = command), do: command
+  @doc """
+    Executes a command, including all required commands (and their required commands).
+  """
+  @spec run_command(Command.command(), Command.t()) :: Command.t()
+  def run_command(_command, %Command{halted: true} = command), do: command
 
   def run_command(command_mod, %Command{} = command) when is_atom(command_mod) do
     run_command({command_mod, []}, command)
@@ -81,7 +118,7 @@ defmodule Crux.Extensions.Command.Consumer do
       command
     end
     |> case do
-      %{halted: true} ->
+      %{halted: true} = command ->
         command
 
       command ->

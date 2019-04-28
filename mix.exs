@@ -1,13 +1,18 @@
 defmodule Crux.Extensions.MixProject do
   use Mix.Project
 
+  @vsn "0.1.0"
+  @name :crux_extensions
+
   def project do
     [
-      app: :crux_extensions,
-      version: "0.1.0",
+      app: @name,
+      version: @vsn,
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      source_url: "https://github.com/SpaceEEC/#{@name}/",
+      homepage_url: "https://github.com/SpaceEEC/#{@name}/"
     ]
   end
 
@@ -21,8 +26,14 @@ defmodule Crux.Extensions.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:crux_base, path: "../crux_base"},
-      {:gen_stage, ">= 0.0.0"}
+      {:crux_base, git: "https://github.com/spaceeec/crux_base"},
+      {:crux_rest, "~> 0.2.0"},
+      {:gen_stage, ">= 0.0.0"},
+      {:ex_doc,
+       git: "https://github.com/spaceeec/ex_doc",
+       branch: "feat/umbrella",
+       only: :dev,
+       runtime: false}
     ]
   end
 end
