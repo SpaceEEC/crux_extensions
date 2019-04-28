@@ -1,7 +1,7 @@
 defmodule Crux.Extensions.MixProject do
   use Mix.Project
 
-  @vsn "0.1.0"
+  @vsn "0.1.0-dev"
   @name :crux_extensions
 
   def project do
