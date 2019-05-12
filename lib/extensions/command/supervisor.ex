@@ -5,43 +5,24 @@ defmodule Crux.Extensions.Command.Supervisor do
 
   alias Crux.Extensions.Command.Consumer
 
-  def start_link(args) do
-    opts = init_opts(args)
-    ConsumerSupervisor.start_link(__MODULE__, opts)
-  end
-
-  defp init_opts(args) do
-    prefix =
-      case args do
-        %{prefix: prefix} when not is_nil(prefix) ->
-          String.downcase(prefix)
-
-        _ ->
-          nil
-      end
-
-    command_infos =
-      Enum.map(
-        args.commands,
-        fn
-          {_command, _arg} = command_info -> command_info
-          command when is_atom(command) -> {command, []}
-        end
-      )
-
-    %{producers: producers, rest: rest} = args
-
+  def child_spec(handler, opts) when is_atom(handler) and is_list(opts) do
     %{
-      prefix: prefix,
-      command_infos: command_infos,
-      producers: producers,
-      rest: rest
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [handler, opts]},
+      type: :supervisor
     }
   end
 
-  def init(%{producers: producers} = opts) do
-    children = [Consumer.child_spec(opts)]
-    opts = [strategy: :one_for_one, subscribe_to: producers.()]
+  @spec start_link(handler :: module(), [GenServer.option()]) :: Supervisor.on_start()
+  def start_link(handler, opts) when is_atom(handler) do
+    ConsumerSupervisor.start_link(__MODULE__, handler, opts)
+  end
+
+  @spec init(handler :: module()) ::
+          {:ok, [:supervisor.child_spec()], options :: keyword()} | :ignore
+  def init(handler) do
+    children = [Consumer.child_spec(handler)]
+    opts = [strategy: :one_for_one, subscribe_to: handler.producers()]
 
     ConsumerSupervisor.init(children, opts)
   end

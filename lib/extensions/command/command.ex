@@ -2,11 +2,9 @@ defmodule Crux.Extensions.Command do
   @moduledoc ~S"""
     Behaviour module used to compose command pipelines.
 
-  ## Example
+  ## Examples
 
-  ### Commands / Middlewares
-
-  #### A Simple Ping Command
+  ### A Simple Ping Command
     ```elixir
     defmodule MyBot.Command.Ping do
       use Crux.Extensions.Command
@@ -19,7 +17,7 @@ defmodule Crux.Extensions.Command do
     end
     ```
 
-  #### A Simple Middleware
+  ### A Simple Middleware Command
     ```elixir
     defmodule MyBot.Middleware.FetchPicture do
       use Crux.Extensions.Command
@@ -41,7 +39,7 @@ defmodule Crux.Extensions.Command do
     end
     ```
 
-  #### Using the Middleware
+  ### Using the Middleware Command
     ```elixir
     defmodule MyBot.Command.Dog do
       use Crux.Extensions.Command
@@ -56,30 +54,6 @@ defmodule Crux.Extensions.Command do
       end
     end
     ```
-
-  ### Starting `Crux.Extensions.Command`
-    ```elixir
-    defmodule MyBot.Application do
-      use Application
-
-      @commands [MyBot.Command.Ping, MyBot.Command.Dog]
-
-      def start(_, _) do
-        children = [
-          # Other modules, gateway, rest, etc...
-          {Crux.Extensions.Command, %{
-            producers: fn -> fetch_producer_pids() end,
-            prefix: "!",
-            commands: @commands,
-            rest: MyBot.Rest
-          }}
-        ]
-
-        opts = [strategy: :one_for_one]
-        Supervisor.start_link(children, opts)
-      end
-    end
-    ```
   """
 
   defstruct assigns: %{},
@@ -88,7 +62,6 @@ defmodule Crux.Extensions.Command do
             message: nil,
             shard_id: nil,
             halted: false,
-            rest: nil,
             response: nil,
             response_channel: nil
 
@@ -102,7 +75,6 @@ defmodule Crux.Extensions.Command do
           message: Crux.Structs.Message.t(),
           shard_id: non_neg_integer(),
           halted: boolean(),
-          rest: module(),
           response: term(),
           response_channel: Crux.Rest.Util.channel_id_resolvable()
         }
@@ -124,46 +96,25 @@ defmodule Crux.Extensions.Command do
   """
   @type command :: command_mod() | {command_mod(), command_opts()}
 
-  @typedoc """
-    Available options used to start handling commands.
-
-    Notes:
-    * `prefix`: Omitting or `nil` results in commands being triggered without a prefix.
-    * `commands`: A list of modules which must implement `c:triggers/0`.
-    * `producers`: A function returning the current producers to subsribe to.
-    * `rest`: The module (using `Crux.Rest`) which should be used to send a response.
-  """
-  @type options :: %{
-          optional(:prefix) => String.t() | nil,
-          commands: [command()],
-          producers: (() -> [pid()]),
-          rest: module()
-        }
-
   defmacro __using__(_ \\ []) do
     quote do
       @behaviour Crux.Extensions.Command
 
-      import Crux.Extensions.Command, except: [start_link: 1, child_spec: 1]
+      import Crux.Extensions.Command
     end
   end
 
-  # TODO:
-  # error handler ?
-
-  # before (send) handler ?
-  # after (send) handler ?
-
-  @doc false
-  def start_link(arg), do: Crux.Extensions.Command.Supervisor.start_link(arg)
-  @doc false
-  def child_spec(arg), do: Crux.Extensions.Command.Supervisor.child_spec(arg)
-
+  @doc """
+    Sets the response content for this command.
+  """
   @spec set_response(t(), term()) :: t()
   def set_response(%__MODULE__{} = command, response) do
     %{command | response: response}
   end
 
+  @doc """
+    Sets the response channel for this command.
+  """
   @spec set_response_channel(t(), Crux.Rest.Util.channel_id_resolvable() | nil) :: t()
   def set_response_channel(%__MODULE__{} = command, response_channel) do
     response_channel =
@@ -172,21 +123,39 @@ defmodule Crux.Extensions.Command do
     %{command | response_channel: response_channel}
   end
 
+  @doc """
+    Halts this command, no other commands will be executed fater this one.
+  """
   @spec halt(t()) :: t()
   def halt(%__MODULE__{} = command) do
     %{command | halted: true}
   end
 
+  @doc """
+    Assigns an arbitrary value to an atom key, which is accessible
+    under the `assigns` field of a `Command`.
+  """
   @spec assign(t(), key :: atom(), value :: term()) :: t()
   def assign(%__MODULE__{assigns: assigns} = command, key, value) when is_atom(key) do
     %{command | assigns: Map.put(assigns, key, value)}
   end
 
+  @doc """
+    Returns a list of required command modules to run before this one.
+  """
   @callback required() :: [command_mod() | {command_mod(), command_opts()}]
 
+  @doc """
+    Exeucting this command module.
+  """
   @callback call(t(), command_opts()) :: t()
 
-  @callback triggers() :: [String.t()]
+  @doc """
+    List of possible triggers for this command module.
+
+    Only used and required for primarily handled commands.
+  """
+  @callback triggers() :: [String.t() | nil]
 
   @optional_callbacks required: 0, triggers: 0
 end
