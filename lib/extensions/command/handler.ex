@@ -2,7 +2,7 @@ defmodule Crux.Extensions.Command.Handler do
   @moduledoc """
     Handler module serving as entry point for command pipelines.
 
-    ## Example
+  ## Example
 
     ```elixir
     defmodule MyBot.Handler do
