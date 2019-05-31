@@ -4,7 +4,7 @@ defmodule Crux.Extensions.Command.Supervisor do
   use ConsumerSupervisor
 
   def child_spec(handler_module, opts)
-      when is_atom(handler_module) and is_list(opts) do
+      when is_atom(handler_module) and is_tuple(opts) and tuple_size(opts) == 2 do
     %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, [handler_module, opts]},
@@ -12,13 +12,18 @@ defmodule Crux.Extensions.Command.Supervisor do
     }
   end
 
-  @spec start_link(
-          handler_module :: module(),
-          [GenServer.option()]
-        ) :: Supervisor.on_start()
-  def start_link(handler_module, opts)
+  def child_spec(handler_module, opts)
       when is_atom(handler_module) do
-    ConsumerSupervisor.start_link(__MODULE__, {handler_module, opts}, opts)
+    child_spec(handler_module, {opts, []})
+  end
+
+  @spec start_link(
+          module(),
+          {opts :: term(), [GenServer.option()]}
+        ) :: Supervisor.on_start()
+  def start_link(handler_module, {opts, gen_opts})
+      when is_atom(handler_module) do
+    ConsumerSupervisor.start_link(__MODULE__, {handler_module, opts}, gen_opts)
   end
 
   @spec init({handler :: module(), opts :: term()}) ::
