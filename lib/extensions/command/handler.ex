@@ -162,7 +162,7 @@ defmodule Crux.Extensions.Command.Handler do
         end
 
       if command do
-        handler_module.response(opts, command)
+        handler_module.respond(opts, command)
       end
     end
   end
