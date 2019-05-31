@@ -88,14 +88,15 @@ defmodule Crux.Extensions.Handler do
   @callback on_error(
               opts(),
               Command.t(),
-              todo :: any()
+              error :: any(),
+              stacktrace :: any()
             ) :: any()
 
   @optional_callbacks match_event: 2,
                       match_prefixes: 2,
                       match_commands: 4,
                       respond: 2,
-                      on_error: 3
+                      on_error: 4
 
   defmacro __using__(_opts \\ []) do
     quote location: :keep do
@@ -149,7 +150,7 @@ defmodule Crux.Extensions.Handler do
             run_command(command_info, command)
           rescue
             e ->
-              handler_module.on_error(command, e, __STACKTRACE__)
+              handler_module.on_error(opts, command, e, __STACKTRACE__)
 
               nil
           end
