@@ -133,7 +133,10 @@ defmodule Crux.Extensions.Command.Handler do
       @doc "Default implementation using `rest/1` and `c:Crux.Rest.create_message!/2`."
       def respond(opts, command), do: unquote(__MODULE__).respond(__MODULE__, opts, command)
 
-      defoverridable handle?: 2, match_prefixes: 2, match_commands: 4, respond: 2
+      defoverridable match_event: 2,
+                     match_prefixes: 2,
+                     match_commands: 4,
+                     respond: 2
     end
   end
 
