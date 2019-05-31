@@ -1,4 +1,4 @@
-defmodule Crux.Extensions.Handler do
+defmodule Crux.Extensions.Command.Handler do
   @moduledoc """
     Handler module serving as entry point for command pipelines.
 
