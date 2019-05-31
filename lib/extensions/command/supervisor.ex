@@ -33,7 +33,7 @@ defmodule Crux.Extensions.Command.Supervisor do
     children = [
       %{
         id: handler,
-        start: {handler, :start_task, []},
+        start: {handler, :start_task, [opts]},
         type: :worker,
         restart: :temporary
       }
