@@ -34,7 +34,8 @@ defmodule Crux.Extensions.Command.Supervisor do
       %{
         id: handler,
         start: {handler, :start_task, []},
-        type: :worker
+        type: :worker,
+        restart: :temporary
       }
     ]
 
