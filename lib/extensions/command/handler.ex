@@ -196,7 +196,10 @@ defmodule Crux.Extensions.Command.Handler do
   ### Optional Callbacks Default Implementation
 
   @doc false
-  # Matches only MESSAGE_CREATE events
+  # Ignore bots
+  def match_event(_opts, {:MESSAGE_CREATE, %{author: %{bot: true}}, _shard_id}), do: :error
+
+  # Matches only MESSAGE_CREATE events from user accounts
   def match_event(_opts, {:MESSAGE_CREATE, message, shard_id}) do
     {:ok, {message, shard_id}}
   end
